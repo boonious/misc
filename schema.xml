@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--  
+    Based on Blacklight schema.xml, as a template
+	 http://github.com/projectblacklight/blacklight-jetty/blob/master/solr/conf/schema.xml
+-->
+<schema name="ux2.0" version="1.0">
+	<types>
+		<fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="boolean" class="solr.BoolField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="float" class="solr.TrieFloatField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+		<fieldType name="date" class="solr.TrieDateField" omitNorms="true" precisionStep="0" positionIncrementGap="0"/>
+		<fieldType name="sint" class="solr.SortableIntField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="slong" class="solr.SortableLongField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="sfloat" class="solr.SortableFloatField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="sdouble" class="solr.SortableDoubleField" sortMissingLast="true" omitNorms="true"/>
+		<fieldType name="random" class="solr.RandomSortField" indexed="true" />
+
+		<fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
+				<filter class="solr.LowerCaseFilterFactory"/>
+				<filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+				<filter class="solr.PorterStemFilterFactory"/>
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+				<filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+				<filter class="solr.LowerCaseFilterFactory"/>
+				<filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+				<filter class="solr.PorterStemFilterFactory"/>
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+			</analyzer>
+		</fieldType>
+
+		<fieldtype name="textNoStem" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/>
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+				<filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+			</analyzer>
+		</fieldtype>
+
+		<fieldType name="textSpell" class="solr.TextField" positionIncrementGap="100" >
+			<analyzer>
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/>
+				<tokenizer class="solr.StandardTokenizerFactory"/>
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+				<filter class="solr.StandardFilterFactory"/>
+				<filter class="solr.LowerCaseFilterFactory"/>
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+			</analyzer>
+		</fieldType>
+
+		<fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+			<analyzer>
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt"/>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />
+				<filter class="solr.PatternReplaceFilterFactory" pattern="([^a-z])" replacement="" replace="all" />
+			</analyzer>
+		</fieldType>
+		
+	</types>
+	<fields>
+		<field name="id" type="string" indexed="true" stored="true" required="true" /> 
+		<field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
+		<field name="text" type="text" indexed="true" stored="false" multiValued="true"/>
+		<field name="fulltext" type="text" indexed="true" stored="false" multiValued="true"/>
+		<field name="marc_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="title_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="title_vern_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="subtitle_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="subtitle_vern_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="author_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="author_vern_display" type="string" indexed="false" stored="true" multiValued="false"/>
+		<field name="isbn_t" type="text" indexed="true" stored="true" multiValued="true"/>
+		<field name="language_facet" type="string" indexed="true" stored="true" multiValued="true" />
+		<field name="subject_topic_facet" type="string" indexed="true" stored="true" multiValued="true" />
+		<field name="subject_era_facet" type="string" indexed="true" stored="true" multiValued="true" />
+		<field name="subject_geo_facet" type="string" indexed="true" stored="true" multiValued="true" />
+		<field name="pub_date" type="string" indexed="true" stored="true" multiValued="true"/>
+		<field name="format" type="string" indexed="true" stored="true" multiValued="true"/>
+
+		<dynamicField name="*_i"  type="sint"    indexed="true"  stored="true"/>
+		<dynamicField name="*_s"  type="string"  indexed="true"  stored="true" multiValued="true"/>
+		<dynamicField name="*_l"  type="slong"   indexed="true"  stored="true"/>
+		<dynamicField name="*_t"  type="text"    indexed="true"  stored="false" multiValued="true"/>
+		<dynamicField name="*_b"  type="boolean" indexed="true"  stored="true"/>
+		<dynamicField name="*_f"  type="sfloat"  indexed="true"  stored="true"/>
+		<dynamicField name="*_d"  type="sdouble" indexed="true"  stored="true"/>
+		<dynamicField name="*_dt" type="date"    indexed="true"  stored="true"/>
+		<dynamicField name="random*" type="random" />
+		<dynamicField name="*_facet" type="string" indexed="true" stored="false" multiValued="true" />
+		<dynamicField name="*_display" type="string" indexed="false" stored="true" multiValued="true" />
+		<dynamicField name="*_sort" type="alphaOnlySort" indexed="true" stored="false"/>
+		<dynamicField name="*_unstem_search" type="textNoStem" indexed="true" stored="false" multiValued="true" />
+		<dynamicField name="*spell" type="textSpell" indexed="true" stored="false" multiValued="true"/>
+
+	</fields>
+
+	<uniqueKey>id</uniqueKey>
+	<defaultSearchField>text</defaultSearchField>
+	<solrQueryParser defaultOperator="OR"/>
+	<copyField source="title_t" dest="title_unstem_search"/>
+	<copyField source="subtitle_t" dest="subtitle_unstem_search"/>
+	<copyField source="title_addl_t" dest="title_addl_unstem_search"/>
+	<copyField source="title_added_entry_t" dest="title_added_entry_unstem_search"/>
+	<copyField source="title_series_t" dest="title_series_unstem_search"/>
+	<copyField source="author_t" dest="author_unstem_search"/>
+	<copyField source="author_addl_t" dest="author_addl_unstem_search"/>
+	<copyField source="subject_t" dest="subject_unstem_search"/>
+	<copyField source="subject_addl_t" dest="subject_addl_unstem_search"/>
+	<copyField source="subject_topic_facet" dest="subject_topic_unstem_search"/>
+
+	<copyField source="*_t" dest="spell"/>
+	<copyField source="*_facet" dest="spell"/>
+	<copyField source="title_t" dest="title_spell"/>
+	<copyField source="subtitle_t" dest="title_spell"/>
+	<copyField source="addl_titles_t" dest="title_spell"/>
+	<copyField source="title_added_entry_t" dest="title_spell"/>
+	<copyField source="title_series_t" dest="title_spell"/>
+	<copyField source="author_t" dest="author_spell"/>
+	<copyField source="author_addl_t" dest="author_spell"/>
+	<copyField source="subject_topic_facet" dest="subject_spell"/>
+	<copyField source="subject_t" dest="subject_spell"/>
+	<copyField source="subject_addl_t" dest="subject_spell"/>  
+
+	<copyField source="title_t" dest="opensearch_display"/>
+	<copyField source="subtitle_t" dest="opensearch_display"/>
+	<copyField source="addl_titles_t" dest="opensearch_display"/>
+	<copyField source="title_added_entry_t" dest="opensearch_display"/>
+	<copyField source="title_series_t" dest="opensearch_display"/>
+	<copyField source="author_t" dest="opensearch_display"/>
+	<copyField source="author_addl_t" dest="opensearch_display"/>
+	<copyField source="subject_topic_facet" dest="opensearch_display"/>
+	<copyField source="subject_t" dest="opensearch_display"/>
+	<copyField source="subject_addl_t" dest="opensearch_display"/>  
+
+	<copyField source="*_t" dest="text"/>
+	<copyField source="fulltext" dest="text"/>
+
+</schema>
