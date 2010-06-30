@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<solr persistent="true">
+	<cores adminPath="/admin/cores">
+  		<core name="fedora" instanceDir="fedora/"/>
+  		<core name="cernbookdata" instanceDir="cernbookdata/"/>
+  		<core name="main" instanceDir="main/"/>
+	</cores>
+</solr>
+
