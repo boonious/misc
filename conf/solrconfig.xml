@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--  
-    For information on how to customize this file, please see
-    http://wiki.apache.org/solr/SolrConfigXml. The page also has a link to 
-    an extensively commented version of this file. 
+  Based on Blacklight solrconfig.xml,
+  http://github.com/projectblacklight/blacklight-jetty/blob/master/solr/conf/solrconfig.xml
 -->
 <config>
   <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
-  <dataDir>${solr.data.dir:./solr/data}</dataDir>
+  <dataDir>${solr.data.dir:}</dataDir>
   
   <!-- index time configurations -->
   <indexDefaults>
@@ -680,6 +679,13 @@
       <str name="echoParams">all</str>
     </lst>
   </requestHandler>
+
+  <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
+    <lst name="defaults">
+      <str name="config">dataimport-cern-books-config.xml</str>
+	 </lst>
+  </requestHandler>
+	
   <admin>
     <defaultQuery>book</defaultQuery>
   </admin>
