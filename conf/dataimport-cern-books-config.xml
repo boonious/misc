@@ -1,0 +1,29 @@
+<dataConfig>
+	<dataSource type="FileDataSource" encoding="UTF-8" />
+	<document>
+		<entity name="page" processor="XPathEntityProcessor" stream="true" forEach="/collection/record/"
+            url="/file-location-of/cern_books_data.xml"
+				xsl="/file-location-of/xslt/preprocessCernBooksData.xsl"
+            transformer="RegexTransformer, DateFormatTransformer">
+			<field column="id" xpath="/collection/record/controlfield[@tag='001']" />
+			<field column="title_display" xpath="/collection/record/title_display" />
+			<field column="title_t" xpath="/collection/record/title_t" />
+			<field column="author_display" xpath="/collection/record/author_display" />
+			<field column="author_facet" xpath="/collection/record/author_facet" />
+			<field column="author_t" xpath="/collection/record/author_t" />
+			<field column="published_display" xpath="/collection/record/publisher_display" />
+			<field column="published_t" xpath="/collection/record/publisher_t" />
+			<field column="pub_date" xpath="/collection/record/pub_date" />
+			<field column="year_facet" xpath="/collection/record/year_facet" />
+			<field column="pub_date_sort" xpath="/collection/record/year_multisort_i" />
+			<!--field column="year_multisort_i" xpath="/collection/record/year_multisort_i" /-->
+			<field column="isbn_display" xpath="/collection/record/isbn_display" />
+			<field column="isbn_t" xpath="/collection/record/isbn_t" />
+			<field column="format" xpath="/collection/record/datafield[@tag='980']/subfield[@code='a']" />
+			<field column="language_facet" xpath="/collection/record/datafield[@tag='041']/subfield[@code='a']" />			
+			<field column="subject_topic_facet" xpath="/collection/record/subject_topic_facet" />
+			<field column="subject_era_facet" xpath="/collection/record/subject_era_facet" />			
+			<field column="subject_t" xpath="/collection/record/subject_t" />
+   	</entity>
+   </document>
+</dataConfig>
