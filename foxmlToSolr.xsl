@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?> 
-<!-- 
-	JISC UX2 Fedora-Solr-integration 
-   Boon Low, http://ux2.nesc.ed.ac.uk 
-   XSLT stylesheet for DC metadata and rich binary datastreams URL mapping
--->
+<!-- $Id: demoFoxmlToLucene.xslt 5734 2006-11-28 11:20:15Z gertsp $ -->
 
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"   
@@ -115,6 +111,14 @@
 					<xsl:with-param name="field_value" select="normalize-space(text())"/>
 					<xsl:with-param name="display" select="true()"/>
 					<xsl:with-param name="facet" select="true()"/>					
+				</xsl:call-template>
+			</xsl:if>
+			<xsl:if test="contains(name(),'identifier') and contains(text(), 'ISBN:')">
+				<xsl:call-template name="populate_fields">
+					<xsl:with-param name="field_name" select="'isbn'"/>
+					<xsl:with-param name="field_value" select="substring-after(normalize-space(text()),'ISBN:')"/>
+					<xsl:with-param name="display" select="true()"/>
+					<xsl:with-param name="text" select="true()"/>					
 				</xsl:call-template>
 			</xsl:if>
 			<xsl:if test="contains(name(),'language')">
