@@ -1,94 +1,158 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!--  
-  Based on Blacklight solrconfig.xml,
-  http://github.com/projectblacklight/blacklight-jetty/blob/master/solr/conf/solrconfig.xml
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<!-- 
+     For more details about configurations options that may appear in this 
+     file, see http://wiki.apache.org/solr/SolrConfigXml.
+
+     Specifically, the Solr Config can support XInclude, which may make it easier to manage
+     the configuration.  See https://issues.apache.org/jira/browse/SOLR-1167
 -->
 <config>
-  <abortOnConfigurationError>${solr.abortOnConfigurationError:true}</abortOnConfigurationError>
-  <dataDir>${solr.data.dir:}</dataDir>
   
-  <!-- index time configurations -->
+  <!--
+    Controls what version of Lucene various components of Solr adhere to. Generally, you want
+    to use the latest version to get all bug fixes and improvements. It is highly recommended 
+    that you fully re-index after changing this setting as it can affect both how text is indexed
+    and queried.
+  -->
+  <luceneMatchVersion>LUCENE_40</luceneMatchVersion>
+
+  <!-- lib directives can be used to instruct Solr to load an Jars identified
+       and use them to resolve any "plugins" specified in your solrconfig.xml or
+       schema.xml (ie: Analyzers, Request Handlers, etc...).
+
+       All directories and paths are resolved relative to the instanceDir.
+
+       If a "./lib" directory exists in your instanceDir, all files found in it
+       are included as if you had used the following syntax...
+       
+              <lib dir="./lib" />
+    -->
+  <!-- A dir option by itself adds any files found in the directory to the
+       classpath, this is useful for including all jars in a directory.
+    -->
+  <!--<lib dir="../../contrib/extraction/lib" /> -->
+  <!-- When a regex is specified in addition to a directory, only the files in that
+       directory which completely match the regex (anchored on both ends)
+       will be included.
+    -->
+  <!--<lib dir="../../dist/" regex="apache-solr-cell-\d.*\.jar" />
+  <lib dir="../../dist/" regex="apache-solr-clustering-\d.*\.jar" /> -->
+  <!-- If a dir option (with or without a regex) is used and nothing is found
+       that matches, it will be ignored
+    -->
+  <!-- <lib dir="../../contrib/clustering/lib/" />
+  <lib dir="/total/crap/dir/ignored" /> -->
+  <!-- an exact path can be used to specify a specific file.  This will cause
+       a serious error to be logged if it can't be loaded.
+  <lib path="../a-jar-that-does-not-exist.jar" /> 
+  -->
+
+  <dataDir>${solr.data.dir:}</dataDir>
+
+  <!--  The DirectoryFactory to use for indexes.
+        solr.StandardDirectoryFactory, the default, is filesystem based.
+        solr.RAMDirectoryFactory is memory based, not persistent, and doesn't work with replication. -->
+  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>
+
   <indexDefaults>
     <useCompoundFile>false</useCompoundFile>
     <mergeFactor>10</mergeFactor>
     <ramBufferSizeMB>32</ramBufferSizeMB>
-    <maxMergeDocs>2147483647</maxMergeDocs>
     <maxFieldLength>10000</maxFieldLength>
     <writeLockTimeout>1000</writeLockTimeout>
     <commitLockTimeout>10000</commitLockTimeout>
-    <lockType>single</lockType>
+    <lockType>native</lockType>
   </indexDefaults>
+
   <mainIndex>
     <useCompoundFile>false</useCompoundFile>
     <ramBufferSizeMB>32</ramBufferSizeMB>
     <mergeFactor>10</mergeFactor>
-    <maxMergeDocs>2147483647</maxMergeDocs>
-    <maxFieldLength>10000</maxFieldLength>
     <unlockOnStartup>false</unlockOnStartup>
-    <deletionPolicy class="solr.SolrDeletionPolicy">
-      <str name="keepOptimizedOnly">false</str>
+ 	 <reopenReaders>true</reopenReaders>
+	 <deletionPolicy class="solr.SolrDeletionPolicy">
       <str name="maxCommitsToKeep">1</str>
+      <str name="maxOptimizedCommitsToKeep">1</str>
     </deletionPolicy>
+    <!--  To aid in advanced debugging, you may turn on IndexWriter debug logging.
+      Setting to true will set the file that the underlying Lucene IndexWriter
+      will write its debug infostream to.  -->
+  	 <infoStream file="INFOSTREAM.txt">false</infoStream> 
   </mainIndex>
 
   <updateHandler class="solr.DirectUpdateHandler2" />
 
-  <!-- query time configurations -->
   <query>
-    <maxBooleanClauses>1024</maxBooleanClauses>
-    <filterCache class="solr.FastLRUCache"
-        size="512" initialSize="512" autowarmCount="128"/>
-    <queryResultCache class="solr.LRUCache"
-        size="512" initialSize="512" autowarmCount="32"/>
-    <documentCache class="solr.LRUCache"
-        size="512" initialSize="512" autowarmCount="0"/>
-    <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>50</queryResultWindowSize>
-    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
-    <HashDocSet maxSize="3000" loadFactor="0.75"/>
+	<maxBooleanClauses>1024</maxBooleanClauses>
+	<filterCache class="solr.FastLRUCache" size="512" initialSize="512" autowarmCount="128"/>
+  	<queryResultCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="32"/>
+   <documentCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="0"/>
+	<enableLazyFieldLoading>true</enableLazyFieldLoading>
+   <queryResultWindowSize>50</queryResultWindowSize>
+	<queryResultMaxDocsCached>200</queryResultMaxDocsCached>
 
     <!-- a newSearcher event is fired whenever a new searcher is being prepared
-         and there is a current searcher handling requests (aka registered). -->
+      and there is a current searcher handling requests (aka registered).
+      It can be used to prime certain caches to prevent long request times for
+      certain requests.
+    -->
+    <!-- QuerySenderListener takes an array of NamedList and executes a
+         local query request for each NamedList in sequence. -->
     <listener event="newSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
-        <!-- query for all objects (default query) for home page facets -->
-        <lst>
-          <str name="rows">0</str> 
-          <str name="fl">score</str>
-          <str name="facet">true</str>
-          <str name="facet.mincount">1</str>
-          <str name="facet.limit">10</str>
-          <str name="facet.field">format</str>
-          <str name="facet.field">lc_1letter_facet</str>
-          <str name="f.lc_1letter_facet.facet.sort">false</str>
-          <str name="facet.field">lc_alpha_facet</str>
-          <str name="facet.field">lc_b4cutter_facet</str>
-          <str name="facet.field">language_facet</str>
-          <str name="facet.field">pub_date</str>
-          <str name="facet.field">subject_era_facet</str>
-          <str name="facet.field">subject_geo_facet</str>
-          <str name="facet.field">subject_topic_facet</str>
-        </lst>
-        <!-- query for single document to populate filter cache -->
-        <lst>
-          <str name="q">id:00282214</str>
-          <str name="qt">standard</str>
-          <str name="rows">0</str>
-          <str name="fl">score</str>
-          <str name="facet">true</str>
-          <str name="facet.mincount">1</str>
-          <str name="facet.limit">10</str>
-          <str name="facet.field">format</str>
-          <str name="facet.field">lc_1letter_facet</str>
-          <str name="f.lc_1letter_facet.facet.sort">false</str>
-          <str name="facet.field">lc_alpha_facet</str>
-          <str name="facet.field">lc_b4cutter_facet</str>
-          <str name="facet.field">language_facet</str>
-          <str name="facet.field">pub_date</str>
-          <str name="facet.field">subject_era_facet</str>
-          <str name="facet.field">subject_geo_facet</str>
-          <str name="facet.field">subject_topic_facet</str>
-        </lst>
+        	<lst>
+				<str name="rows">0</str>
+				<str name="fl">score</str>
+				<str name="facet">true</str>
+				<str name="facet.mincount">1</str>
+				<str name="facet.limit">10</str>
+				<str name="facet.field">format</str>
+				<str name="facet.field">lc_1letter_facet</str>
+				<str name="f.lc_1letter_facet.facet.sort">false</str>
+				<str name="facet.field">lc_alpha_facet</str>
+				<str name="facet.field">lc_b4cutter_facet</str>
+				<str name="facet.field">language_facet</str>
+				<str name="facet.field">pub_date</str>
+				<str name="facet.field">subject_era_facet</str>
+				<str name="facet.field">subject_geo_facet</str>
+				<str name="facet.field">subject_topic_facet</str>
+			</lst>
+			<!-- query for single document to populate filter cache -->
+			<lst>
+				<str name="q">id:00282214</str>
+				<str name="qt">standard</str>
+				<str name="rows">0</str>
+				<str name="fl">score</str>
+				<str name="facet">true</str>
+				<str name="facet.mincount">1</str>
+				<str name="facet.limit">10</str>
+				<str name="facet.field">format</str>
+				<str name="facet.field">lc_1letter_facet</str>
+				<str name="f.lc_1letter_facet.facet.sort">false</str>
+				<str name="facet.field">lc_alpha_facet</str>
+				<str name="facet.field">lc_b4cutter_facet</str>
+				<str name="facet.field">language_facet</str>
+				<str name="facet.field">pub_date</str>
+				<str name="facet.field">subject_era_facet</str>
+				<str name="facet.field">subject_geo_facet</str>
+				<str name="facet.field">subject_topic_facet</str>
+			</lst>
       </arr>
     </listener>
 
@@ -97,66 +161,69 @@
          requests or to gain autowarming data from. -->
     <listener event="firstSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
-        <!-- query for all objects (default query) for home page facets -->
-        <lst>
-          <str name="rows">0</str> 
-          <str name="fl">score</str>
-          <str name="facet">true</str>
-          <str name="facet.mincount">1</str>
-          <str name="facet.limit">10</str>
-          <str name="facet.field">format</str>
-          <str name="facet.field">lc_1letter_facet</str>
-          <str name="f.lc_1letter_facet.facet.sort">false</str>
-          <str name="facet.field">lc_alpha_facet</str>
-          <str name="facet.field">lc_b4cutter_facet</str>
-          <str name="facet.field">language_facet</str>
-          <str name="facet.field">pub_date</str>
-          <str name="facet.field">subject_era_facet</str>
-          <str name="facet.field">subject_geo_facet</str>
-          <str name="facet.field">subject_topic_facet</str>
-        </lst>
-        <!-- query for single document to populate filter cache -->
-        <lst>
-          <str name="q">id:00282214</str>
-          <str name="qt">standard</str>
-          <str name="rows">0</str>
-          <str name="fl">score</str>
-          <str name="facet">true</str>
-          <str name="facet.mincount">1</str>
-          <str name="facet.limit">10</str>
-          <str name="facet.field">format</str>
-          <str name="facet.field">lc_1letter_facet</str>
-          <str name="f.lc_1letter_facet.facet.sort">false</str>
-          <str name="facet.field">lc_alpha_facet</str>
-          <str name="facet.field">lc_b4cutter_facet</str>
-          <str name="facet.field">language_facet</str>
-          <str name="facet.field">pub_date</str>
-          <str name="facet.field">subject_era_facet</str>
-          <str name="facet.field">subject_geo_facet</str>
-          <str name="facet.field">subject_topic_facet</str>
-        </lst>
+        	<lst>
+				<str name="rows">0</str>
+				<str name="fl">score</str>
+				<str name="facet">true</str>
+				<str name="facet.mincount">1</str>
+				<str name="facet.limit">10</str>
+				<str name="facet.field">format</str>
+          	<str name="facet.field">lc_1letter_facet</str>
+          	<str name="f.lc_1letter_facet.facet.sort">false</str>
+          	<str name="facet.field">lc_alpha_facet</str>
+          	<str name="facet.field">lc_b4cutter_facet</str>
+          	<str name="facet.field">language_facet</str>
+          	<str name="facet.field">pub_date</str>
+          	<str name="facet.field">subject_era_facet</str>
+          	<str name="facet.field">subject_geo_facet</str>
+          	<str name="facet.field">subject_topic_facet</str>
+			</lst>
+        	<!-- query for single document to populate filter cache -->
+        	<lst>
+				<str name="q">id:00282214</str>
+				<str name="qt">standard</str>
+				<str name="rows">0</str>
+          	<str name="fl">score</str>
+          	<str name="facet">true</str>
+          	<str name="facet.mincount">1</str>
+          	<str name="facet.limit">10</str>
+          	<str name="facet.field">format</str>
+          	<str name="facet.field">lc_1letter_facet</str>
+          	<str name="f.lc_1letter_facet.facet.sort">false</str>
+          	<str name="facet.field">lc_alpha_facet</str>
+          	<str name="facet.field">lc_b4cutter_facet</str>
+          	<str name="facet.field">language_facet</str>
+          	<str name="facet.field">pub_date</str>
+          	<str name="facet.field">subject_era_facet</str>
+          	<str name="facet.field">subject_geo_facet</str>
+          	<str name="facet.field">subject_topic_facet</str>
+        	</lst>
       </arr>
     </listener>
 
     <useColdSearcher>false</useColdSearcher>
-    <maxWarmingSearchers>2</maxWarmingSearchers>
+	 <maxWarmingSearchers>2</maxWarmingSearchers>
   </query>
 
-  <requestDispatcher handleSelect="true" >
-    <requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="2048" />
-    <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" />
-  </requestDispatcher>
+	<requestDispatcher handleSelect="true" >
+		<requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="2048000" />
+		<httpCaching lastModifiedFrom="openTime" etagSeed="Solr" />
+	</requestDispatcher>
 
-  <!-- blacklight does not use the standard request handler -->
-  <requestHandler name="standard" class="solr.SearchHandler">
-    <lst name="defaults">
-      <str name="echoParams">all</str>
-      <str name="q.op">AND</str>
-    </lst>
+  <requestHandler name="standard" class="solr.SearchHandler" >
+    <!-- default values for query parameters -->
+     <lst name="defaults">
+       <str name="echoParams">explicit</str>
+       <!--
+       <int name="rows">10</int>
+       <str name="fl">*</str>
+       <str name="version">2.1</str>
+        -->
+     </lst>
   </requestHandler>
 
-  <!-- Searching ("All Fields") -->
-  <requestHandler name="search" class="solr.SearchHandler" default="true" >
+	<!-- Searching ("All Fields") -->
+  	<requestHandler name="search" class="solr.SearchHandler" default="true" >
     <lst name="defaults">
       <str name="defType">dismax</str>
       <str name="echoParams">explicit</str>      
@@ -209,141 +276,19 @@
         title_series_t^100
         text^10
       </str>
-      <int name="ps">3</int>
-      <float name="tie">0.01</float>
-
-      <!-- NOT using marc_display because it is large and will slow things down for search results -->
-      <str name="fl">
-        id, 
-        score,
-        author_display,
-        author_vern_display, 
-        format, 
-        isbn_t, 
-        language_facet, 
-        lc_callnum_display,
-        material_type_display, 
-        published_display,
-        published_vern_display,
-        pub_date,
-        title_display,
-        title_vern_display,
-        subject_topic_facet,
-        subject_geo_facet,
-        subject_era_facet,
-        subtitle_display,
-        subtitle_vern_display,
-        url_fulltext_display,
-        url_suppl_display,
-      </str>
-     
-      <str name="facet">true</str>
-      <str name="facet.mincount">1</str>
-      <str name="facet.limit">10</str>
-      <str name="facet.field">format</str>
-      <str name="facet.field">lc_1letter_facet</str>
-      <str name="facet.field">lc_alpha_facet</str>
-      <str name="facet.field">lc_b4cutter_facet</str>
-      <str name="facet.field">language_facet</str>
-      <str name="facet.field">pub_date</str>
-      <str name="facet.field">subject_era_facet</str>
-      <str name="facet.field">subject_geo_facet</str>
-      <str name="facet.field">subject_topic_facet</str>
-      
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">default</str>
-      <str name="spellcheck.onlyMorePopular">true</str>
-      <str name="spellcheck.extendedResults">true</str>
-      <str name="spellcheck.collate">false</str>
-      <str name="spellcheck.count">5</str>
-    </lst>
-    <arr name="last-components">
-      <str>spellcheck</str>
-    </arr>
-  </requestHandler>
-  
-  <!--  Searches Authors only  -->
-  <requestHandler name="author_search" class="solr.SearchHandler" >
-    <lst name="defaults">
-      <str name="defType">dismax</str>
-      <str name="echoParams">explicit</str>
-      <str name="sort">score desc, pub_date_sort desc, title_sort asc</str>   
-      <str name="q.alt">*:*</str>
-      <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
-      <str name="qf">
+		<str name="author_qf">
         author_unstem_search^200
         author_addl_unstem_search^50
         author_t^20
         author_addl_t
       </str>
-      <str name="pf">
+      <str name="author_pf">
         author_unstem_search^2000
         author_addl_unstem_search^500
         author_t^200
         author_addl_t^10
       </str>
-      <int name="ps">3</int>
-      <float name="tie">0.01</float>
-
-      <!-- NOT using marc_display because it is large and will slow things down for search results -->
-      <str name="fl">
-        id, 
-        score,
-        author_display,
-        author_vern_display, 
-        format, 
-        isbn_t, 
-        language_facet, 
-        lc_callnum_display,
-        material_type_display, 
-        published_display,
-        published_vern_display,
-        pub_date,
-        title_display,
-        title_vern_display,
-        subject_topic_facet,
-        subject_geo_facet,
-        subject_era_facet,
-        subtitle_display,
-        subtitle_vern_display,
-        url_fulltext_display,
-        url_suppl_display,
-      </str>
-      
-      <str name="facet">true</str>
-      <str name="facet.mincount">1</str>
-      <str name="facet.limit">10</str>
-      <str name="facet.field">format</str>
-      <str name="facet.field">lc_1letter_facet</str>
-      <str name="facet.field">lc_alpha_facet</str>
-      <str name="facet.field">lc_b4cutter_facet</str>
-      <str name="facet.field">language_facet</str>
-      <str name="facet.field">pub_date</str>
-      <str name="facet.field">subject_era_facet</str>
-      <str name="facet.field">subject_geo_facet</str>
-      <str name="facet.field">subject_topic_facet</str>
-      
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">author</str>
-      <str name="spellcheck.onlyMorePopular">true</str>
-      <str name="spellcheck.extendedResults">true</str>
-      <str name="spellcheck.collate">false</str>
-      <str name="spellcheck.count">5</str>
-    </lst>
-    <arr name="last-components">
-      <str>spellcheck</str>
-    </arr>
-  </requestHandler>
-  
-  <!--  Searches Titles only  -->
-  <requestHandler name="title_search" class="solr.SearchHandler" >
-    <lst name="defaults">
-      <str name="defType">dismax</str>
-      <str name="echoParams">explicit</str>
-      <str name="sort">score desc, pub_date_sort desc, title_sort asc</str>   
-      <str name="q.alt">*:*</str>
-      <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
-      <str name="qf">
+		<str name="title_qf">
         title_unstem_search^50000
         subtitle_unstem_search^25000
         title_addl_unstem_search^10000
@@ -355,7 +300,7 @@
         title_series_unstem_search^5
         title_series_t
       </str>
-      <str name="pf">
+      <str name="title_pf">
         title_unstem_search^500000
         subtitle_unstem_search^250000
         title_addl_unstem_search^100000
@@ -367,68 +312,7 @@
         title_series_t^50
         title_series_unstem_search^10
       </str>
-      <int name="ps">3</int>
-      <float name="tie">0.01</float>
-
-      <!-- NOT using marc_display because it is large and will slow things down for search results -->
-      <str name="fl">
-        id, 
-        score,
-        author_display,
-        author_vern_display, 
-        format, 
-        isbn_t, 
-        language_facet, 
-        lc_callnum_display,
-        material_type_display, 
-        published_display,
-        published_vern_display,
-        pub_date,
-        title_display,
-        title_vern_display,
-        subject_topic_facet,
-        subject_geo_facet,
-        subject_era_facet,
-        subtitle_display,
-        subtitle_vern_display,
-        url_fulltext_display,
-        url_suppl_display,
-      </str>
-      
-      <str name="facet">true</str>
-      <str name="facet.mincount">1</str>
-      <str name="facet.limit">10</str>
-      <str name="facet.field">format</str>
-      <str name="facet.field">lc_1letter_facet</str>
-      <str name="facet.field">lc_alpha_facet</str>
-      <str name="facet.field">lc_b4cutter_facet</str>
-      <str name="facet.field">language_facet</str>
-      <str name="facet.field">pub_date</str>
-      <str name="facet.field">subject_era_facet</str>
-      <str name="facet.field">subject_geo_facet</str>
-      <str name="facet.field">subject_topic_facet</str>
-      
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">title</str>
-      <str name="spellcheck.onlyMorePopular">true</str>
-      <str name="spellcheck.extendedResults">true</str>
-      <str name="spellcheck.collate">false</str>
-      <str name="spellcheck.count">5</str>
-    </lst>
-    <arr name="last-components">
-      <str>spellcheck</str>
-    </arr>
-  </requestHandler>
-  
-  <!--  Searches Subjects only  -->
-  <requestHandler name="subject_search" class="solr.SearchHandler" >
-    <lst name="defaults">
-      <str name="defType">dismax</str>
-      <str name="echoParams">explicit</str>
-      <str name="sort">score desc, pub_date_sort desc, title_sort asc</str>   
-      <str name="q.alt">*:*</str>
-      <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
-      <str name="qf">
+      <str name="subject_qf">
         subject_topic_unstem_search^200
         subject_unstem_search^125
         subject_topic_facet^100
@@ -436,7 +320,7 @@
         subject_addl_unstem_search^10
         subject_addl_t
       </str>
-      <str name="pf">
+      <str name="subject_pf">
         subject_topic_unstem_search^2000
         subject_unstem_search^1250
         subject_t^1000
@@ -444,10 +328,9 @@
         subject_addl_unstem_search^100
         subject_addl_t^10
       </str>
+
       <int name="ps">3</int>
       <float name="tie">0.01</float>
-      
-      <!-- NOT using marc_display because it is large and will slow things down for search results -->
       <str name="fl">
         id, 
         score,
@@ -470,8 +353,17 @@
         subtitle_vern_display,
         url_fulltext_display,
         url_suppl_display,
+        identifier_display,
+		  description_display,
+		  date_display,
+		  pdf_display,
+		  msword_display,
+		  mspowerpoint_display,
+		  mp3_display,
+		  web_display,
+		  shockwave_display
       </str>
-      
+
       <str name="facet">true</str>
       <str name="facet.mincount">1</str>
       <str name="facet.limit">10</str>
@@ -484,20 +376,21 @@
       <str name="facet.field">subject_era_facet</str>
       <str name="facet.field">subject_geo_facet</str>
       <str name="facet.field">subject_topic_facet</str>
-      
+
       <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">subject</str>
+      <str name="spellcheck.dictionary">default</str>
       <str name="spellcheck.onlyMorePopular">true</str>
       <str name="spellcheck.extendedResults">true</str>
       <str name="spellcheck.collate">false</str>
       <str name="spellcheck.count">5</str>
+
     </lst>
     <arr name="last-components">
       <str>spellcheck</str>
     </arr>
   </requestHandler>
-  
-  <!-- for requests to get a single document; use id=666 instead of q=id:666 -->
+
+ <!-- for requests to get a single document; use id=666 instead of q=id:666 -->
   <requestHandler name="document" class="solr.SearchHandler" >
     <lst name="defaults">
       <str name="echoParams">all</str>
@@ -506,7 +399,7 @@
       <str name="q">{!raw f=id v=$id}</str> <!-- use id=666 instead of q=id:666 -->
     </lst>
   </requestHandler>
-  
+
   <!--  For Advanced Search  -->
   <requestHandler name="advanced" class="solr.SearchHandler" >
     <lst name="defaults">
@@ -521,8 +414,8 @@
       <str name="mm">1</str> 
       <str name="ps">3</str> 
       <float name="tie">0.01</float>
-      
-      <!-- for user query terms in author text box -->
+
+		<!-- for user query terms in author text box -->
       <str name="qf_author">
         author_unstem_search^200
         author_addl_unstem_search^50
@@ -535,7 +428,7 @@
         author_t^200
         author_addl_t^10
       </str>
-      
+
       <!-- for user query terms in title text box -->
       <str name="qf_title">
         title_unstem_search^50000
@@ -561,7 +454,7 @@
         title_series_t^50
         title_series_unstem_search^10
       </str>
-      
+
       <!-- for user query terms in subject text box -->
       <str name="qf_subject">
         subject_topic_unstem_search^200
@@ -579,15 +472,14 @@
         subject_addl_unstem_search^100
         subject_addl_t^10
       </str>
-      
+
       <!-- for user query terms in number text box -->
       <str name="qf_number">isbn_t</str>
-      
+
       <!-- for user query terms in keyword text box -->
       <str name="qf_keyword">text</str>
       <str name="pf_keyword">text^10</str>
-      
-      <!-- NOT using marc_display because it is large and will slow things down for search results -->
+
       <str name="fl">
         id, 
         score,
@@ -610,8 +502,17 @@
         subtitle_vern_display,
         url_fulltext_display,
         url_suppl_display,
+		  identifier_display,
+		  description_display,
+		  date_display,
+		  pdf_display,
+		  msword_display,
+		  mspowerpoint_display,
+		  mp3_display,
+		  web_display,
+		  shockwave_display
       </str>
-      
+
       <str name="facet">true</str>
       <str name="facet.mincount">1</str>
       <str name="facet.limit">10</str>
@@ -624,7 +525,7 @@
       <str name="facet.field">subject_era_facet</str>
       <str name="facet.field">subject_geo_facet</str>
       <str name="facet.field">subject_topic_facet</str>
-      
+
       <str name="spellcheck">true</str>
       <str name="spellcheck.dictionary">subject</str>
       <str name="spellcheck.onlyMorePopular">true</str>
@@ -636,65 +537,92 @@
       <str>spellcheck</str>
     </arr>
   </requestHandler>
+
+  <!--
+   Search components are registered to SolrCore and used by Search Handlers
+   
+   By default, the following components are avaliable:
+    
+   <searchComponent name="query"     class="org.apache.solr.handler.component.QueryComponent" />
+   <searchComponent name="facet"     class="org.apache.solr.handler.component.FacetComponent" />
+   <searchComponent name="mlt"       class="org.apache.solr.handler.component.MoreLikeThisComponent" />
+   <searchComponent name="highlight" class="org.apache.solr.handler.component.HighlightComponent" />
+   <searchComponent name="stats"     class="org.apache.solr.handler.component.StatsComponent" />
+   <searchComponent name="debug"     class="org.apache.solr.handler.component.DebugComponent" />
+   
+   Default configuration in a requestHandler would look like:
+    <arr name="components">
+      <str>query</str>
+      <str>facet</str>
+      <str>mlt</str>
+      <str>highlight</str>
+      <str>stats</str>
+      <str>debug</str>
+    </arr>
+
+    If you register a searchComponent to one of the standard names, that will be used instead.
+    To insert components before or after the 'standard' components, use:
+    
+    <arr name="first-components">
+      <str>myFirstComponentName</str>
+    </arr>
+    
+    <arr name="last-components">
+      <str>myLastComponentName</str>
+    </arr>
+   -->
   
-  <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
-    <str name="queryAnalyzerFieldType">textSpell</str>
-    <lst name="spellchecker">
-      <str name="name">default</str>
-      <str name="field">spell</str>
-      <str name="spellcheckIndexDir">./spell</str>
-      <str name="buildOnOptimize">true</str>
-    </lst>
-    <lst name="spellchecker">
-      <str name="name">author</str>
-      <str name="field">author_spell</str>
-      <str name="spellcheckIndexDir">./spell_author</str>
-      <str name="accuracy">0.7</str>
-      <str name="buildOnOptimize">true</str>
-    </lst>
-    <lst name="spellchecker">
-      <str name="name">subject</str>
-      <str name="field">subject_spell</str>
-      <str name="spellcheckIndexDir">./spell_subject</str>
-      <str name="accuracy">0.7</str>
-      <str name="buildOnOptimize">true</str>
-    </lst>
-    <lst name="spellchecker">
-      <str name="name">title</str>
-      <str name="field">title_spell</str>
-      <str name="spellcheckIndexDir">./spell_title</str>
-      <str name="accuracy">0.7</str>
-      <str name="buildOnOptimize">true</str>
-    </lst>
-  </searchComponent>
+	<searchComponent name="spellcheck" class="solr.SpellCheckComponent">
+   	<str name="queryAnalyzerFieldType">textSpell</str>
+    	<lst name="spellchecker">
+	      <str name="name">default</str>
+	      <str name="field">spell</str>
+	      <str name="spellcheckIndexDir">./spell</str>
+	      <str name="buildOnOptimize">true</str>
+	   </lst>
+	   <lst name="spellchecker">
+      	<str name="name">author</str>
+      	<str name="field">author_spell</str>
+      	<str name="spellcheckIndexDir">./spell_author</str>
+      	<str name="accuracy">0.7</str>
+      	<str name="buildOnOptimize">true</str>
+    	</lst>
+    	<lst name="spellchecker">
+      	<str name="name">subject</str>
+      	<str name="field">subject_spell</str>
+      	<str name="spellcheckIndexDir">./spell_subject</str>
+      	<str name="accuracy">0.7</str>
+      	<str name="buildOnOptimize">true</str>
+    	</lst>
+    	<lst name="spellchecker">
+      	<str name="name">title</str>
+      	<str name="field">title_spell</str>
+      	<str name="spellcheckIndexDir">./spell_title</str>
+      	<str name="accuracy">0.7</str>
+      	<str name="buildOnOptimize">true</str>
+    	</lst>
+	</searchComponent>
 
-  <requestHandler name="/update" class="solr.XmlUpdateRequestHandler" />
-  <requestHandler name="/update/javabin" class="solr.BinaryUpdateRequestHandler" />
-  <requestHandler name="/analysis" class="solr.AnalysisRequestHandler" />
-  <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
-  <requestHandler name="/admin/ping" class="PingRequestHandler">
-    <lst name="defaults">
-      <str name="qt">search</str>
-      <str name="q">book</str>
-      <str name="echoParams">all</str>
-    </lst>
-  </requestHandler>
+  	<requestHandler name="/update" class="solr.XmlUpdateRequestHandler" />
+	<requestHandler name="/update/javabin" class="solr.BinaryUpdateRequestHandler" />
+  	<requestHandler name="/analysis" class="solr.AnalysisRequestHandler" />
+  	<requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
+  	<requestHandler name="/admin/ping" class="PingRequestHandler">
+   	<lst name="defaults">
+	   	<str name="qt">search</str>
+	      <str name="q">book</str>
+	      <str name="echoParams">all</str>
+	   </lst>
+	 </requestHandler>
+	 <admin>
+		<defaultQuery>book</defaultQuery>
+	 </admin>
 
-  <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
-    <lst name="defaults">
-      <str name="config">dataimport-cern-books-config.xml</str>
-	 </lst>
-  </requestHandler>
-	
-  <admin>
-    <defaultQuery>book</defaultQuery>
-  </admin>
-
-  <requestHandler name="/debug/dump" class="solr.DumpRequestHandler" >
-    <lst name="defaults">
-     <str name="echoParams">explicit</str>
-     <str name="echoHandler">true</str>
-    </lst>
-  </requestHandler>
+  	<requestHandler name="/debug/dump" class="solr.DumpRequestHandler" >
+    	<lst name="defaults">
+     		<str name="echoParams">explicit</str>
+     		<str name="echoHandler">true</str>
+    	</lst>
+  	</requestHandler>
 
 </config>
